@@ -1,0 +1,13 @@
+config:
+  cloud-init.vendor-data: |
+    #cloud-config
+    package_upgrade: true
+    packages:
+      - curl
+      - git
+      - vim
+    runcmd:
+      - curl -fsSL https://claude.ai/install.sh | bash
+      - echo 'export PATH="$HOME/.local/bin:$PATH"' >> /root/.bashrc
+description: Sandbox environment for LLM coding agents
+devices: {}
