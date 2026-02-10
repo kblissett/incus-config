@@ -15,17 +15,16 @@ colima start --runtime incus --cpu 8 --memory 8
 
 ## Setup (one-time)
 
-1. Create the profile and load the cloud-init config:
+Run the configure-profile script with your SSH public key:
 
 ```bash
-incus profile create llm-coding-sandbox
-incus profile edit llm-coding-sandbox < llm-coding-sandbox.yaml
+./bin/configure-profile 'ssh-ed25519 AAAA...'
 ```
 
-2. Add your Claude settings to the profile:
+Add Colima's SSH config to your `~/.ssh/config` for jump host access:
 
-```bash
-incus profile device add llm-coding-sandbox claude-settings disk source=$HOME/.claude/settings.json path=/root/.claude/settings.json readonly=true
+```
+Include ~/.colima/ssh_config
 ```
 
 ## Usage
@@ -33,22 +32,31 @@ incus profile device add llm-coding-sandbox claude-settings disk source=$HOME/.c
 Launch a sandbox:
 
 ```bash
-incus launch images:ubuntu/24.04/cloud my-sandbox --profile default --profile llm-coding-sandbox
+./bin/launch my-sandbox
 ```
 
-Wait for cloud-init to finish (installs updates, vim, and Claude Code):
-
-```bash
-incus exec my-sandbox -- cloud-init status --wait
-```
-
-Enter the sandbox:
+Enter the sandbox (without SSH agent):
 
 ```bash
 incus exec my-sandbox -- bash
 ```
 
-Run Claude Code:
+Clone a repo using SSH agent forwarding:
+
+> **⚠️ WARNING:** Never leave an interactive SSH agent forwarding session open while a coding agent is running autonomously. The agent could use your forwarded credentials to authenticate as you to external systems. These scripts run one-off commands so the forwarding session ends immediately.
+
+```bash
+./bin/git-clone my-sandbox git@github.com:user/repo.git
+./bin/git-clone my-sandbox git@github.com:user/repo.git /workspace/myrepo
+```
+
+Run arbitrary commands with SSH agent forwarding:
+
+```bash
+./bin/ssh-cmd my-sandbox 'git push origin main'
+```
+
+Run Claude Code (inside the sandbox):
 
 ```bash
 claude
@@ -57,17 +65,10 @@ claude
 ## Managing sandboxes
 
 ```bash
-# List running containers
-incus list
-
-# Stop a sandbox
-incus stop my-sandbox
-
-# Delete a sandbox
-incus delete my-sandbox
-
-# Force delete a running sandbox
-incus delete my-sandbox --force
+incus list                       # List running containers
+incus stop my-sandbox            # Stop a sandbox
+incus delete my-sandbox          # Delete a sandbox
+incus delete my-sandbox --force  # Force delete a running sandbox
 ```
 
 ## Notes
@@ -75,4 +76,6 @@ incus delete my-sandbox --force
 - Uses `images:ubuntu/24.04/cloud` (cloud-init enabled image)
 - The `default` profile provides networking and root disk
 - Claude Code is installed as root; settings are mounted read-only from host
+- Claude Code runs with `--dangerously-skip-permissions` and `--disallowed-tools WebSearch` by default
+- SSH server is installed for agent forwarding; container IPs aren't directly reachable from macOS, so use Colima as a jump host
 - Cloud-init only runs on first boot

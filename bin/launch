@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -z "${1:-}" ]; then
+    echo "Usage: launch <sandbox-name>"
+    exit 1
+fi
+
+SANDBOX="$1"
+
+echo "Launching $SANDBOX..."
+incus launch images:ubuntu/24.04/cloud "$SANDBOX" --profile default --profile llm-coding-sandbox
+
+echo "Waiting for cloud-init to finish (this installs packages and Claude Code)..."
+incus exec "$SANDBOX" -- cloud-init status --wait
+
+echo "Done! Enter with: incus exec $SANDBOX -- bash"

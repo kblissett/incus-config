@@ -6,8 +6,23 @@ config:
       - curl
       - git
       - vim
+      - wget
+      - openssh-server
     runcmd:
+      - mkdir -p -m 755 /etc/apt/keyrings
+      - wget -nv -O /etc/apt/keyrings/githubcli-archive-keyring.gpg https://cli.github.com/packages/githubcli-archive-keyring.gpg
+      - chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg
+      - echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list
+      - apt-get update
+      - apt-get install -y gh
       - curl -fsSL https://claude.ai/install.sh | bash
       - echo 'export PATH="$HOME/.local/bin:$PATH"' >> /root/.bashrc
+      - echo "alias claude='claude --dangerously-skip-permissions --disallowed-tools WebSearch'" >> /root/.bashrc
+      - systemctl enable ssh
+      - systemctl start ssh
+      - sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
+      - systemctl restart ssh
+      - mkdir -p /root/.ssh && cp /home/ubuntu/.ssh/authorized_keys /root/.ssh/authorized_keys
+      - ssh-keyscan github.com >> /root/.ssh/known_hosts 2>/dev/null
 description: Sandbox environment for LLM coding agents
 devices: {}

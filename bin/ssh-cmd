@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
+    echo "Usage: ssh-cmd <sandbox-name> <command>"
+    echo "Example: ssh-cmd my-sandbox 'git clone git@github.com:user/repo.git'"
+    exit 1
+fi
+
+SANDBOX="$1"
+shift
+CMD="$*"
+
+SANDBOX_IP=$(incus list "$SANDBOX" -c4 --format csv | cut -d' ' -f1)
+
+if [ -z "$SANDBOX_IP" ]; then
+    echo "Error: Could not get IP for $SANDBOX"
+    exit 1
+fi
+
+ssh -A -J colima -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null "root@$SANDBOX_IP" "$CMD"

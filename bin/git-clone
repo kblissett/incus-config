@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
+    echo "Usage: git-clone <sandbox-name> <repo-url> [destination]"
+    echo "Example: git-clone my-sandbox git@github.com:user/repo.git"
+    echo "Example: git-clone my-sandbox git@github.com:user/repo.git /workspace/myrepo"
+    exit 1
+fi
+
+SANDBOX="$1"
+REPO_URL="$2"
+DEST="${3:-}"
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+if [ -n "$DEST" ]; then
+    "$SCRIPT_DIR/ssh-cmd" "$SANDBOX" "git clone $REPO_URL $DEST"
+else
+    "$SCRIPT_DIR/ssh-cmd" "$SANDBOX" "git clone $REPO_URL"
+fi
